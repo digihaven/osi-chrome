@@ -1,0 +1,5 @@
+{
+	"servers":[
+		{"host":"207.47.216.202", "portraw":10846, "portwebsocket":10847, "secure":0 }
+	]
+}

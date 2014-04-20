@@ -1,0 +1,28 @@
+{
+  "name": "(OSI) Open Search Index",
+  "version": "14.4.14.5",
+  "manifest_version": 2,
+  "description": "OSI is a distributed World Wide Web indexing project, aiming at creating a censorship free, anonymous and open index.",
+  "background": {
+    "scripts": ["jquery-1.11.0.min.js","socket.io.min.js","jquery.storageapi.min.js","opensearch.js","eventPage.js"],
+    "persistent": true
+  },   
+  "icons": { "16": "icon16.png",
+           "48": "icon48.png",
+          "128": "icon128.png" },
+
+  "browser_action": {
+    "name": "OSI",
+    "default_icon": "icon128.png",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "<all_urls>",
+    "storage"
+  ],
+  "content_scripts": [ {
+    "js": [ "jquery-1.11.0.min.js", "content.js" ],
+    "matches": [ "<all_urls>"],
+	"all_frames": true
+  }]
+}
