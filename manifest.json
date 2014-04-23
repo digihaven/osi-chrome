@@ -1,8 +1,8 @@
 {
   "name": "(OSI) Open Search Index",
-  "version": "14.4.14.5",
+  "version": "14.4.14.9",
   "manifest_version": 2,
-  "description": "OSI is a distributed World Wide Web indexing project, aiming at creating a censorship free, anonymous and open index.",
+  "description": "OSI is a distributed P2P project, aiming at creating a censorship free, anonymous and open internet, while earning users OSICoin.",
   "background": {
     "scripts": ["js/jquery-1.11.0.min.js","js/socket.io.min.js","js/jquery.storageapi.min.js","js/osi.js","js/eventPage.js"],
     "persistent": true

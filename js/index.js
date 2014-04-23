@@ -5,10 +5,17 @@ if (typeof $ === 'undefined' && typeof require === 'function')
 	cheerio.ajax=function(settings){
 		var request = require('request');
 		request({url:settings.url, json:settings.dataType==="json"}, function (error, response, data) {
-			if (error)
+
+			/*
+				@bugfix typeof response=="undefined"
+				Fixes this error:
+				>> ajax.error { [Error: connect ENETUNREACH] code: 'ENETUNREACH', errno: 'ENETUNREACH', syscall: 'connect' }
+				>> TypeError: Cannot read property 'statusCode' of undefined
+			*/
+			if (error || typeof response=="undefined")
 			{
 				if (typeof settings.error === "function")
-					settings.error(null,response,"");
+					settings.error(null,error,"");
 				else
 					return;
 			}
@@ -103,6 +110,7 @@ if (typeof io === 'undefined' && typeof require === 'function')
 		}
 	};
 
+
 	exports.localStorageGet=function(n,def)
 	{
 		if (!$.localStorage.isSet(n))
@@ -121,8 +129,82 @@ if (typeof io === 'undefined' && typeof require === 'function')
 			 s4() + '-' + s4() + s4() + s4();
 	};
 
+	var serverLoaded=false;
+	exports.listen=function(){
+		if (serverLoaded)
+			return;
+
+		if (typeof require === 'function')
+		{
+			var mysettings={"host":"","portraw":10846,"portwebsocket":10847,"secure":1};
+
+			console.log("Listening on port",mysettings.portwebsocket);
+
+			var socketio = require('socket.io');
+			var io = null;
+
+			if (mysettings.secure)
+			{
+				// Load libraries
+				var https = require('https');
+				var fs = require('fs');
+
+				var svrOptions = {
+				    key: fs.readFileSync('../certs/server.key'),
+				    cert: fs.readFileSync('../certs/server.crt'),
+				    ca: fs.readFileSync( '../certs/bundle.crt')
+				};
+				 
+				// Create a Basic server and response 
+				var servidor = https.createServer( svrOptions , function( req , res ){
+				    res.writeHead(200);
+				    res.end('Hi! Code here...');
+				});
+				 
+				// Create the Socket.io Server over the HTTPS Server
+				io = socketio.listen( servidor , { log: false });
+				 
+				// Now listen in the specified Port
+				servidor.listen( mysettings.portwebsocket );
+			}
+			else
+			{
+				var io = socketio.listen(mysettings.portwebsocket, { log: false });
+			}
+
+			io.sockets.on('connection', function (socket) {
+				var address = socket.handshake.address;
+
+				var geo = null;
+				try {
+					var geoip = require('geoip-lite');
+					geo = geoip.lookup(address.address);
+				} catch(e) {
+				}
+
+			
+				if (geo==null)
+					geo = { range: [ 0, 0 ],
+						country: 'unknowen',
+						region: 'unknowen',
+						city: 'unknowen',
+						ll: [0, 0] };
+
+				console.log("New connection from " + address.address + ":" + address.port, geo.city, geo.country, geo.country);
+
+				socket.on('disconnect', function () {
+					console.log('User disconnected ' + address.address + ":" + address.port);
+				});
+			});
+
+			serverLoaded=true;
+		}
+	}
+
 	exports.loadConfig=function()
 	{
+		exports.listen();
+
 		console.log("Fetching seeds");
 		$.ajax({
 		  dataType: "json",
@@ -133,6 +215,7 @@ if (typeof io === 'undefined' && typeof require === 'function')
 		  },
 		  error: function(jqXHR, textStatus, errorThrown){
 			console.log("ajax.error",textStatus);
+			exports.disconnect();
 			setTimeout(function(){
 				exports.loadConfig(); // Try again....
 			},10000);
@@ -169,17 +252,23 @@ if (typeof io === 'undefined' && typeof require === 'function')
 
 		server=seeds.servers[choice];
 
+		
+		var address=(server.secure ? 'https' : 'http') + '://' + server.host + ':' + server.portwebsocket;
 	
-		console.log("Connecting to:",JSON.stringify(server));
-		var socket = io.connect('',{host:server.host,secure:server.secure,port:server.portwebsocket,query:"",
+		console.log("Connecting to:", address);
+
+		var socket = io.connect(address,{
+		//var socket = io.connect('',{host:server.host,secure:server.secure,port:server.portwebsocket,query:"",
 		'reconnect':false,
 		'force new connection':true,
 		});
-
+		socket.on('connect', function() {
+		  console.log('Connected', socket.socket.connected);
+		});
 		
-		socket.on('disconnect', function (fn) {
-			console.error("Socket Disconnect");
-
+		socket.on('disconnect', function (err) {
+			console.error("Socket Disconnect",err);
+			
 			setTimeout(function(){
 				exports.loadConfig(); // Try again....
 			},10000);
@@ -233,12 +322,10 @@ if (typeof io === 'undefined' && typeof require === 'function')
 			}
 		});
 
-		socket.on('error', function (fn) {
-			console.error("Socket Disconnect");
-
-			setTimeout(function(){
-				exports.loadConfig(); // Try again....
-			},10000);
+		socket.on('error', function (err) {
+			console.error("Socket Error",err);
+			
+			socket.disconnect();
 		});
 	};
 })(typeof exports === 'undefined'? this['osi']={}: exports);
