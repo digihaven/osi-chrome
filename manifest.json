@@ -1,15 +1,15 @@
 {
   "name": "(OSI) Open Search Index",
-  "version": "14.4.14.9",
+  "version": "14.4.14.11",
   "manifest_version": 2,
   "description": "OSI is a distributed P2P project, aiming at creating a censorship free, anonymous and open internet, while earning users OSICoin.",
   "background": {
-    "scripts": ["js/jquery-1.11.0.min.js","js/socket.io.min.js","js/jquery.storageapi.min.js","js/osi.js","js/eventPage.js"],
+    "scripts": ["js/jquery.min.js","js/socket.io.js","js/jquery.storageapi.min.js","js/osi.js","js/eventPage.js"],
     "persistent": true
   },   
-  "icons": { "16": "images/icon16.png",
-           "48": "images/icon48.png",
-          "128": "images/icon128.png" },
+  "icons": { 	"16": "images/icon16.png",
+           	"48": "images/icon48.png",
+          	"128": "images/icon128.png" },
 
   "browser_action": {
     "name": "OSI",
@@ -21,7 +21,7 @@
     "storage"
   ],
   "content_scripts": [ {
-    "js": [ "js/jquery-1.11.0.min.js", "js/content.js" ],
+    "js": [ "js/jquery.min.js", "js/content.js" ],
     "matches": [ "<all_urls>"],
 	"all_frames": true
   }]
